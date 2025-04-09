@@ -1,10 +1,6 @@
 package com.eurecom.calcite;
 
 import org.apache.calcite.DataContext;
-import org.apache.calcite.adapter.enumerable.EnumerableConvention;
-import org.apache.calcite.adapter.enumerable.EnumerableInterpretable;
-import org.apache.calcite.adapter.enumerable.EnumerableRel;
-import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
@@ -22,7 +18,6 @@ import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.runtime.Bindable;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTable;
@@ -37,49 +32,36 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 public class SYCLDBQueryProcessor {
-
-    private static final List<Object[]> BOOK_DATA = Arrays.asList(
-            new Object[]{1, "Les Miserables", 1862, 0},
-            new Object[]{2, "The Hunchback of Notre-Dame", 1829, 0},
-            new Object[]{3, "The Last Day of a Condemned Man", 1829, 0},
-            new Object[]{4, "The three Musketeers", 1844, 1},
-            new Object[]{5, "The Count of Monte Cristo", 1884, 1}
-    );
-
-    private static final List<Object[]> AUTHOR_DATA = Arrays.asList(
-            new Object[]{0, "Victor", "Hugo"},
-            new Object[]{1, "Alexandre", "Dumas"}
-    );
-
 
     public static void main(String[] args) throws Exception {
         // Instantiate a type factory for creating types (e.g., VARCHAR, NUMERIC, etc.)
         RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl();
         // Create the root schema describing the data model
-        CalciteSchema schema = CalciteSchema.createRootSchema(true);
+        CalciteSchema schema = CalciteSchema.createRootSchema(false);
         // Define type for authors table
         RelDataTypeFactory.Builder authorType = new RelDataTypeFactory.Builder(typeFactory);
         authorType.add("id", SqlTypeName.INTEGER);
         authorType.add("fname", SqlTypeName.VARCHAR);
         authorType.add("lname", SqlTypeName.VARCHAR);
 
-        // Initialize authors table with data
-        ListTable authorsTable = new ListTable(authorType.build(), AUTHOR_DATA);
-        // Add authors table to the schema
-        schema.add("author", authorsTable);
+
+        SycldbTable authorTable = new SycldbTable("author", authorType.build());
+        schema.add("author", authorTable);
+
         // Define type for books table
         RelDataTypeFactory.Builder bookType = new RelDataTypeFactory.Builder(typeFactory);
         bookType.add("id", SqlTypeName.INTEGER);
         bookType.add("title", SqlTypeName.VARCHAR);
         bookType.add("year", SqlTypeName.INTEGER);
         bookType.add("author", SqlTypeName.INTEGER);
-        // Initialize books table with data
-        ListTable booksTable = new ListTable(bookType.build(), BOOK_DATA);
-        // Add books table to the schema
-        schema.add("book", booksTable);
+
+        SycldbTable bookTable = new SycldbTable("book", bookType.build());
+        schema.add("book", bookTable);
 
         // Create an SQL parser
         SqlParser parser = SqlParser.create(
@@ -87,8 +69,9 @@ public class SYCLDBQueryProcessor {
                         + "FROM Book b\n"
                         + "LEFT OUTER JOIN Author a ON b.author=a.id\n"
                         + "WHERE b.\"year\" > 1830\n"
-                        + "ORDER BY b.id\n"
-                        + "LIMIT 5");
+//                        + "ORDER BY b.id\n"
+//                        + "LIMIT 5"
+        );
         // Parse the query into an AST
         SqlNode sqlNode = parser.parseQuery();
 
@@ -132,32 +115,42 @@ public class SYCLDBQueryProcessor {
 //                        SqlExplainLevel.NO_ATTRIBUTES
 //                )
 //        );
-        // Initialize optimizer/planner with the necessary rules
+
         RelOptPlanner planner = cluster.getPlanner();
-        planner.addRule(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
-        planner.addRule(CoreRules.PROJECT_TO_CALC);
-        planner.addRule(CoreRules.FILTER_TO_CALC);
-        planner.addRule(EnumerableRules.ENUMERABLE_CALC_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_JOIN_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_SORT_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_LIMIT_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_AGGREGATE_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_VALUES_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_UNION_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_MINUS_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_INTERSECT_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_MATCH_RULE);
-        planner.addRule(EnumerableRules.ENUMERABLE_WINDOW_RULE);
+
+        // Initialize optimizer/planner with the necessary rules
+        planner.addRule(SycldbFilterRule.INSTANCE);
+        planner.addRule(SycldbProjectRule.INSTANCE);
+        planner.addRule(SycldbToEnumerableConverterRule.INSTANCE);
+        planner.addRule(SycldbTableScanRule.INSTANCE);
+        planner.addRule(SycldbJoinRule.INSTANCE);
+
+        planner.addRule(CoreRules.FILTER_INTO_JOIN);
+
+//        planner.addRule(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
+//        planner.addRule(CoreRules.PROJECT_TO_CALC);
+//        planner.addRule(CoreRules.FILTER_TO_CALC);
+//        planner.addRule(EnumerableRules.ENUMERABLE_CALC_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_JOIN_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_SORT_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_LIMIT_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_AGGREGATE_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_VALUES_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_UNION_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_MINUS_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_INTERSECT_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_MATCH_RULE);
+//        planner.addRule(EnumerableRules.ENUMERABLE_WINDOW_RULE);
 
 
         // Define the type of the output plan (in this case we want a physical plan in
         // BindableConvention)
         logPlan = planner.changeTraits(logPlan,
-                cluster.traitSet().replace(EnumerableConvention.INSTANCE));
+                cluster.traitSet().replace(SycldbRel.SYCLDB));
         planner.setRoot(logPlan);
         // Start the optimization process to obtain the most efficient physical plan based on the
         // provided rule set.
-        EnumerableRel phyPlan = (EnumerableRel) planner.findBestExp();
+        RelNode phyPlan = planner.findBestExp();
 
         // Display the physical plan
         System.out.println(
@@ -165,17 +158,17 @@ public class SYCLDBQueryProcessor {
                         SqlExplainLevel.NON_COST_ATTRIBUTES));
 
         // get executable plan
-        Bindable<Object[]> executablePlan = EnumerableInterpretable.toBindable(
-                new HashMap<>(),
-                null,
-                phyPlan,
-                EnumerableRel.Prefer.ARRAY
-        );
-
-        // Run the executable plan using a context simply providing access to the schema
-        for (Object[] row : executablePlan.bind(new SchemaOnlyDataContext(schema))) {
-            System.out.println(Arrays.toString(row));
-        }
+//        Bindable<Object[]> executablePlan = EnumerableInterpretable.toBindable(
+//                new HashMap<>(),
+//                null,
+//                phyPlan,
+//                EnumerableRel.Prefer.ARRAY
+//        );
+//
+//        // Run the executable plan using a context simply providing access to the schema
+//        for (Object[] row : executablePlan.bind(new SchemaOnlyDataContext(schema))) {
+//            System.out.println(Arrays.toString(row));
+//        }
     }
 
     /**

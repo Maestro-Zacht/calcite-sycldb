@@ -31,12 +31,13 @@ public final class SycldbTableScanRule extends ConverterRule {
     }
 
 
-    public static final Config DEFAULT = Config.INSTANCE
+    public static final SycldbTableScanRule INSTANCE = Config.INSTANCE
             .withConversion(
                     LogicalTableScan.class,
                     Convention.NONE,
                     SYCLDB,
                     "SycldbTableScanRule"
             )
-            .withRuleFactory(SycldbTableScanRule::new);
+            .withRuleFactory(SycldbTableScanRule::new)
+            .toRule(SycldbTableScanRule.class);
 }

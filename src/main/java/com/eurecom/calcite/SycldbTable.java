@@ -1,21 +1,27 @@
 package com.eurecom.calcite;
 
-import com.google.common.collect.ImmutableList;
-import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.DataContext;
+import org.apache.calcite.adapter.java.AbstractQueryableTable;
+import org.apache.calcite.linq4j.Enumerable;
+import org.apache.calcite.linq4j.Enumerator;
+import org.apache.calcite.linq4j.QueryProvider;
+import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.schema.TranslatableTable;
-import org.apache.calcite.schema.impl.AbstractTable;
-import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.schema.ScannableTable;
+import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.impl.AbstractTableQueryable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-public class SycldbTable extends AbstractTable implements TranslatableTable {
+public class SycldbTable extends AbstractQueryableTable implements ScannableTable {
     // TODO: real fields
     private final String tableName;
+    private final RelDataType dataType;
 
-    SycldbTable(String tableName) {
+    SycldbTable(String tableName, RelDataType dataType) {
+        super(Object[].class);
         this.tableName = tableName;
+        this.dataType = dataType;
     }
 
     @Override
@@ -23,25 +29,43 @@ public class SycldbTable extends AbstractTable implements TranslatableTable {
         return "SycldbTable {" + tableName + "}";
     }
 
+//    @Override
+//    public RelNode toRel(RelOptTable.ToRelContext context, RelOptTable relOptTable) {
+//        final RelOptCluster cluster = context.getCluster();
+//        return new SycldbTableScan(
+//                cluster,
+//                cluster.traitSetOf(SycldbRel.SYCLDB),
+//                ImmutableList.of(),
+//                relOptTable,
+//                this
+//        );
+//    }
+
+    // TODO: actually get row type
     @Override
-    public RelNode toRel(RelOptTable.ToRelContext context, RelOptTable relOptTable) {
-        final RelOptCluster cluster = context.getCluster();
-        return new SycldbTableScan(
-                cluster,
-                cluster.traitSetOf(SycldbRel.SYCLDB),
-                ImmutableList.of(),
-                relOptTable,
-                this
-        );
+    public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        return typeFactory.copyType(dataType);
     }
 
     @Override
-    public RelDataType getRowType(RelDataTypeFactory typeFactory) {
-        final RelDataType mapType =
-                typeFactory.createMapType(
-                        typeFactory.createSqlType(SqlTypeName.VARCHAR),
-                        typeFactory.createTypeWithNullability(
-                                typeFactory.createSqlType(SqlTypeName.ANY), true));
-        return typeFactory.builder().add("_MAP", mapType).build();
+    public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
+        return new ElasticsearchQueryable<>(queryProvider, schema, this, tableName);
+    }
+
+    @Override
+    public Enumerable<@Nullable Object[]> scan(DataContext root) {
+        return null;
+    }
+
+    public static class ElasticsearchQueryable<T> extends AbstractTableQueryable<T> {
+
+        protected ElasticsearchQueryable(QueryProvider queryProvider, SchemaPlus schema, SycldbTable table, String tableName) {
+            super(queryProvider, schema, table, tableName);
+        }
+
+        @Override
+        public Enumerator<T> enumerator() {
+            throw new UnsupportedOperationException("enumerator");
+        }
     }
 }

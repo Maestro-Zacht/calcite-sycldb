@@ -16,12 +16,13 @@ public class SycldbToEnumerableConverterRule extends ConverterRule {
         return new SycldbToEnumerableConverter(rel);
     }
 
-    public static final Config DEFAULT = Config.INSTANCE
+    public static final SycldbToEnumerableConverterRule INSTANCE = Config.INSTANCE
             .withConversion(
                     SycldbRel.class,
                     SYCLDB,
                     EnumerableConvention.INSTANCE,
                     "SycldbToEnumerableConverterRule"
             )
-            .withRuleFactory(SycldbToEnumerableConverterRule::new);
+            .withRuleFactory(SycldbToEnumerableConverterRule::new)
+            .toRule(SycldbToEnumerableConverterRule.class);
 }
