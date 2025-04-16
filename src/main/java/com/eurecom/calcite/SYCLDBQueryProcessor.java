@@ -32,6 +32,8 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -39,39 +41,104 @@ import java.util.Properties;
 public class SYCLDBQueryProcessor {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            System.err.println("SQL_FILE parameter missing or too many parameters");
+            System.exit(-1);
+        }
+
+        String sqlQuery = Files.readString(Paths.get(args[0]));
+
         // Instantiate a type factory for creating types (e.g., VARCHAR, NUMERIC, etc.)
         RelDataTypeFactory typeFactory = new JavaTypeFactoryImpl();
         // Create the root schema describing the data model
         CalciteSchema schema = CalciteSchema.createRootSchema(false);
-        // Define type for authors table
-        RelDataTypeFactory.Builder authorType = new RelDataTypeFactory.Builder(typeFactory);
-        authorType.add("id", SqlTypeName.INTEGER);
-        authorType.add("fname", SqlTypeName.VARCHAR);
-        authorType.add("lname", SqlTypeName.VARCHAR);
+
+        RelDataTypeFactory.Builder lineorderType = new RelDataTypeFactory.Builder(typeFactory);
+        lineorderType.add("lo_orderkey", SqlTypeName.INTEGER);
+        lineorderType.add("lo_linenumber", SqlTypeName.INTEGER);
+        lineorderType.add("lo_custkey", SqlTypeName.INTEGER);
+        lineorderType.add("lo_partkey", SqlTypeName.INTEGER);
+        lineorderType.add("lo_suppkey", SqlTypeName.INTEGER);
+        lineorderType.add("lo_orderdate", SqlTypeName.INTEGER);
+        lineorderType.add("lo_orderpriority", SqlTypeName.VARCHAR);
+        lineorderType.add("lo_shippriority", SqlTypeName.VARCHAR);
+        lineorderType.add("lo_quantity", SqlTypeName.INTEGER);
+        lineorderType.add("lo_extendedprice", SqlTypeName.FLOAT);
+        lineorderType.add("lo_ordtotalprice", SqlTypeName.FLOAT);
+        lineorderType.add("lo_discount", SqlTypeName.FLOAT);
+        lineorderType.add("lo_revenue", SqlTypeName.FLOAT);
+        lineorderType.add("lo_supplycost", SqlTypeName.FLOAT);
+        lineorderType.add("lo_tax", SqlTypeName.INTEGER);
+        lineorderType.add("lo_commitdate", SqlTypeName.INTEGER);
+        lineorderType.add("lo_shopmode", SqlTypeName.VARCHAR);
+
+        SycldbTable lineorderTable = new SycldbTable("lineorder", lineorderType.build());
+        schema.add("lineorder", lineorderTable);
 
 
-        SycldbTable authorTable = new SycldbTable("author", authorType.build());
-        schema.add("author", authorTable);
+        RelDataTypeFactory.Builder partType = new RelDataTypeFactory.Builder(typeFactory);
+        partType.add("p_partkey", SqlTypeName.INTEGER);
+        partType.add("p_name", SqlTypeName.VARCHAR);
+        partType.add("p_mfgr", SqlTypeName.VARCHAR);
+        partType.add("p_category", SqlTypeName.VARCHAR);
+        partType.add("p_brand1", SqlTypeName.VARCHAR);
+        partType.add("p_color", SqlTypeName.VARCHAR);
+        partType.add("p_type", SqlTypeName.VARCHAR);
+        partType.add("p_size", SqlTypeName.INTEGER);
+        partType.add("p_container", SqlTypeName.VARCHAR);
 
-        // Define type for books table
-        RelDataTypeFactory.Builder bookType = new RelDataTypeFactory.Builder(typeFactory);
-        bookType.add("id", SqlTypeName.INTEGER);
-        bookType.add("title", SqlTypeName.VARCHAR);
-        bookType.add("year", SqlTypeName.INTEGER);
-        bookType.add("author", SqlTypeName.INTEGER);
+        SycldbTable partTable = new SycldbTable("part", partType.build());
+        schema.add("part", partTable);
 
-        SycldbTable bookTable = new SycldbTable("book", bookType.build());
-        schema.add("book", bookTable);
+        RelDataTypeFactory.Builder supplierType = new RelDataTypeFactory.Builder(typeFactory);
+        supplierType.add("s_suppkey", SqlTypeName.INTEGER);
+        supplierType.add("s_name", SqlTypeName.VARCHAR);
+        supplierType.add("s_address", SqlTypeName.VARCHAR);
+        supplierType.add("s_city", SqlTypeName.VARCHAR);
+        supplierType.add("s_nation", SqlTypeName.VARCHAR);
+        supplierType.add("s_region", SqlTypeName.VARCHAR);
+        supplierType.add("s_phone", SqlTypeName.VARCHAR);
+
+        SycldbTable supplierTable = new SycldbTable("supplier", supplierType.build());
+        schema.add("supplier", supplierTable);
+
+        RelDataTypeFactory.Builder customerType = new RelDataTypeFactory.Builder(typeFactory);
+        customerType.add("c_custkey", SqlTypeName.INTEGER);
+        customerType.add("c_name", SqlTypeName.VARCHAR);
+        customerType.add("c_address", SqlTypeName.VARCHAR);
+        customerType.add("c_city", SqlTypeName.VARCHAR);
+        customerType.add("c_nation", SqlTypeName.VARCHAR);
+        customerType.add("c_region", SqlTypeName.VARCHAR);
+        customerType.add("c_phone", SqlTypeName.VARCHAR);
+        customerType.add("c_mktsegment", SqlTypeName.VARCHAR);
+
+        SycldbTable customerTable = new SycldbTable("customer", customerType.build());
+        schema.add("customer", customerTable);
+
+        RelDataTypeFactory.Builder ddateType = new RelDataTypeFactory.Builder(typeFactory);
+        ddateType.add("d_datekey", SqlTypeName.INTEGER);
+        ddateType.add("d_date", SqlTypeName.VARCHAR);
+        ddateType.add("d_dayofweek", SqlTypeName.VARCHAR);
+        ddateType.add("d_month", SqlTypeName.VARCHAR);
+        ddateType.add("d_year", SqlTypeName.INTEGER);
+        ddateType.add("d_yearmonthnum", SqlTypeName.INTEGER);
+        ddateType.add("d_yearmonth", SqlTypeName.VARCHAR);
+        ddateType.add("d_daynuminweek", SqlTypeName.INTEGER);
+        ddateType.add("d_daynuminmonth", SqlTypeName.INTEGER);
+        ddateType.add("d_daynuminyear", SqlTypeName.INTEGER);
+        ddateType.add("d_monthnuminyear", SqlTypeName.INTEGER);
+        ddateType.add("d_weeknuminyear", SqlTypeName.INTEGER);
+        ddateType.add("d_sellingseasin", SqlTypeName.VARCHAR);
+        ddateType.add("d_lastdayinweekfl", SqlTypeName.INTEGER);
+        ddateType.add("d_lastdayinmonthfl", SqlTypeName.INTEGER);
+        ddateType.add("d_holidayfl", SqlTypeName.INTEGER);
+        ddateType.add("d_weekdayfl", SqlTypeName.INTEGER);
+
+        SycldbTable ddateTable = new SycldbTable("ddate", ddateType.build());
+        schema.add("ddate", ddateTable);
 
         // Create an SQL parser
-        SqlParser parser = SqlParser.create(
-                "SELECT b.id, b.title, b.\"year\", a.fname || ' ' || a.lname \n"
-                        + "FROM Book b\n"
-                        + "LEFT OUTER JOIN Author a ON b.author=a.id\n"
-                        + "WHERE b.\"year\" > 1830\n"
-//                        + "ORDER BY b.id\n"
-//                        + "LIMIT 5"
-        );
+        SqlParser parser = SqlParser.create(sqlQuery);
         // Parse the query into an AST
         SqlNode sqlNode = parser.parseQuery();
 
@@ -124,8 +191,27 @@ public class SYCLDBQueryProcessor {
         planner.addRule(SycldbToEnumerableConverterRule.INSTANCE);
         planner.addRule(SycldbTableScanRule.INSTANCE);
         planner.addRule(SycldbJoinRule.INSTANCE);
+        planner.addRule(SycldbAggregateRule.INSTANCE);
 
         planner.addRule(CoreRules.FILTER_INTO_JOIN);
+        planner.addRule(CoreRules.AGGREGATE_MERGE);
+        planner.addRule(CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS);
+        planner.addRule(CoreRules.AGGREGATE_PROJECT_MERGE);
+        planner.addRule(CoreRules.AGGREGATE_REMOVE);
+        planner.addRule(CoreRules.AGGREGATE_FILTER_TRANSPOSE);
+        planner.addRule(CoreRules.AGGREGATE_JOIN_JOIN_REMOVE);
+        planner.addRule(CoreRules.AGGREGATE_JOIN_REMOVE);
+        planner.addRule(CoreRules.AGGREGATE_JOIN_TRANSPOSE_EXTENDED);
+        planner.addRule(CoreRules.FILTER_MERGE);
+        planner.addRule(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
+        planner.addRule(CoreRules.PROJECT_JOIN_JOIN_REMOVE);
+        planner.addRule(CoreRules.PROJECT_JOIN_REMOVE);
+        planner.addRule(CoreRules.PROJECT_MERGE);
+        planner.addRule(CoreRules.PROJECT_REMOVE);
+        planner.addRule(CoreRules.JOIN_CONDITION_PUSH);
+        planner.addRule(CoreRules.JOIN_COMMUTE);
+        planner.addRule(CoreRules.JOIN_PUSH_EXPRESSIONS);
+        planner.addRule(CoreRules.JOIN_PUSH_TRANSITIVE_PREDICATES);
 
 //        planner.addRule(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);
 //        planner.addRule(CoreRules.PROJECT_TO_CALC);
