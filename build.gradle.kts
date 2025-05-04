@@ -14,6 +14,12 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation("org.apache.calcite:calcite-core:1.39.0")
+
+    // https://mvnrepository.com/artifact/org.apache.thrift/libthrift
+    implementation("org.apache.thrift:libthrift:0.21.0")
+
+    // https://mvnrepository.com/artifact/javax.annotation/javax.annotation-api
+    implementation("javax.annotation:javax.annotation-api:1.3.2")
 }
 
 tasks.test {
