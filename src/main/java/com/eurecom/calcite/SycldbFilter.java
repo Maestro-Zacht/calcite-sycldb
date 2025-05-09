@@ -25,6 +25,11 @@ public class SycldbFilter extends Filter implements SycldbRel {
         //TODO
     }
 
+//    @Override
+//    public int convertPlan(TreeConverter converter) {
+//        return 0;
+//    }
+
     @Override
     public Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
         return new SycldbFilter(getCluster(), traitSet, input, condition);

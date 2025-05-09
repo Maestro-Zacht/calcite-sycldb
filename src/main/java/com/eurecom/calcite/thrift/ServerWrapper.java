@@ -12,7 +12,7 @@ public class ServerWrapper implements Runnable {
     private TServer server;
 
     public ServerWrapper() {
-        handler = new ServerHandler();
+        handler = new ServerHandler(server);
         processor = new Processor(handler);
     }
 

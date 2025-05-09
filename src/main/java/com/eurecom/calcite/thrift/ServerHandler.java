@@ -24,14 +24,17 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.thrift.TException;
+import org.apache.thrift.server.TServer;
 
 import java.util.Collections;
 import java.util.Properties;
 
 public class ServerHandler implements CalciteServer.Iface {
-    public ServerHandler() {
+    private TServer server;
+
+    public ServerHandler(TServer server) {
         super();
-        //TODO
+        this.server = server;
     }
 
     @Override
@@ -41,7 +44,8 @@ public class ServerHandler implements CalciteServer.Iface {
 
     @Override
     public void shutdown() throws TException {
-        //todo
+        System.out.println("shutdown()");
+//        server.stop();
     }
 
     private static RelOptCluster newCluster(RelDataTypeFactory factory) {
@@ -54,7 +58,7 @@ public class ServerHandler implements CalciteServer.Iface {
             , viewPath) -> null;
 
     @Override
-    public PlanResult parse(String sql) throws InvalidParseRequest, TException {
+    public PlanResult parse(String sql) {
         // need to trim the sql string as it seems it is not trimed prior to here
         sql = sql.trim();
         // remove last charcter if it is a ;
@@ -141,7 +145,14 @@ public class ServerHandler implements CalciteServer.Iface {
         // provided rule set.
         RelNode phyPlan = planner.findBestExp();
         String json = RelOptUtil.dumpPlan("", phyPlan, SqlExplainFormat.JSON, SqlExplainLevel.NO_ATTRIBUTES);
+//
+        System.out.println(
+                RelOptUtil.dumpPlan("[Physical plan]", phyPlan, SqlExplainFormat.TEXT,
+                        SqlExplainLevel.NON_COST_ATTRIBUTES));
 
-        return new PlanResult(json);
+
+        SycldbJsonConverter converter = new SycldbJsonConverter(json);
+
+        return new PlanResult(converter.getRels(), json);
     }
 }

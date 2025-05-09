@@ -13,6 +13,8 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.List;
+
 public class SycldbTable extends AbstractQueryableTable implements ScannableTable {
     // TODO: real fields
     private final String tableName;
@@ -45,6 +47,14 @@ public class SycldbTable extends AbstractQueryableTable implements ScannableTabl
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
         return typeFactory.copyType(dataType);
+    }
+
+    public List<String> getColumnNames() {
+        return this.dataType.getFieldNames();
+    }
+
+    public String getTableName() {
+        return tableName;
     }
 
     @Override

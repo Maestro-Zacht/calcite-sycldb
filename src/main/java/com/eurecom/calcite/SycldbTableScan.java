@@ -24,6 +24,12 @@ public final class SycldbTableScan extends TableScan implements SycldbRel {
         implementor.sycldbTable = sycldbTable;
     }
 
+//    @Override
+//    public int convertPlan(TreeConverter converter) {
+//        return converter.addTableColumns(sycldbTable.getColumnNames(), sycldbTable.getTableName());
+//    }
+
+
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         return requireNonNull(
