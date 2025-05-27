@@ -31,11 +31,18 @@ public class SycldbSchema extends AbstractSchema {
         lineorderType.add("lo_orderpriority", SqlTypeName.VARCHAR);
         lineorderType.add("lo_shippriority", SqlTypeName.VARCHAR);
         lineorderType.add("lo_quantity", SqlTypeName.INTEGER);
-        lineorderType.add("lo_extendedprice", SqlTypeName.FLOAT);
-        lineorderType.add("lo_ordtotalprice", SqlTypeName.FLOAT);
-        lineorderType.add("lo_discount", SqlTypeName.FLOAT);
-        lineorderType.add("lo_revenue", SqlTypeName.FLOAT);
-        lineorderType.add("lo_supplycost", SqlTypeName.FLOAT);
+        
+//        lineorderType.add("lo_extendedprice", SqlTypeName.FLOAT);
+//        lineorderType.add("lo_ordtotalprice", SqlTypeName.FLOAT);
+//        lineorderType.add("lo_discount", SqlTypeName.FLOAT);
+//        lineorderType.add("lo_revenue", SqlTypeName.FLOAT);
+//        lineorderType.add("lo_supplycost", SqlTypeName.FLOAT);
+        lineorderType.add("lo_extendedprice", SqlTypeName.INTEGER);
+        lineorderType.add("lo_ordtotalprice", SqlTypeName.INTEGER);
+        lineorderType.add("lo_discount", SqlTypeName.INTEGER);
+        lineorderType.add("lo_revenue", SqlTypeName.INTEGER);
+        lineorderType.add("lo_supplycost", SqlTypeName.INTEGER);
+
         lineorderType.add("lo_tax", SqlTypeName.INTEGER);
         lineorderType.add("lo_commitdate", SqlTypeName.INTEGER);
         lineorderType.add("lo_shopmode", SqlTypeName.VARCHAR);

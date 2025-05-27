@@ -106,7 +106,7 @@ public class SycldbJsonConverter {
         }
         // expr
         else if (obj.containsKey("op")) {
-            exprType = new ExprType(ExprOption.COLUMN);
+            exprType = new ExprType(ExprOption.EXPR);
 
             exprType.op = (String) ((JSONObject) obj.get("op")).get("name");
             exprType.operands = ((List<JSONObject>) obj.get("operands"))

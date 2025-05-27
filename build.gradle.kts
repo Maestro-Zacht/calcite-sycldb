@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("idea")
+    application
 }
 
 group = "com.eurecom.calcite"
@@ -34,4 +35,8 @@ idea {
         isDownloadJavadoc = true
         isDownloadSources = true
     }
+}
+
+application {
+    mainClass = "com.eurecom.calcite.thrift.ServerCaller"
 }
