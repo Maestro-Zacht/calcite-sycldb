@@ -45,7 +45,7 @@ public class SycldbJsonConverter {
 
         if (relOpType == RelNodeType.TABLE_SCAN) {
             List<String> tables = (List<String>) relObj.get("table");
-            relNode.tables = tables;
+            relNode.setTables(tables);
         }
 
         if (relOpType == RelNodeType.TABLE_SCAN || relOpType == RelNodeType.JOIN) {
@@ -53,32 +53,32 @@ public class SycldbJsonConverter {
                     .stream()
                     .map(Long::valueOf)
                     .toList();
-            relNode.inputs = inputs;
+            relNode.setInputs(inputs);
         }
 
         if (relOpType == RelNodeType.FILTER || relOpType == RelNodeType.JOIN) {
-            relNode.condition = parseExpr((JSONObject) relObj.get("condition"));
+            relNode.setCondition(parseExpr((JSONObject) relObj.get("condition")));
         }
 
         if (relOpType == RelNodeType.JOIN) {
-            relNode.joinType = (String) relObj.get("joinType");
+            relNode.setJoinType((String) relObj.get("joinType"));
         }
 
         if (relOpType == RelNodeType.PROJECT) {
-            relNode.fields = ((List<String>) relObj.get("fields"));
-            relNode.exprs = ((List<JSONObject>) relObj.get("exprs"))
+            relNode.setFields(((List<String>) relObj.get("fields")));
+            relNode.setExprs(((List<JSONObject>) relObj.get("exprs"))
                     .stream()
                     .map(this::parseExpr)
-                    .toList();
+                    .toList());
         }
 
         if (relOpType == RelNodeType.AGGREGATE) {
-            relNode.group = (List<Long>) relObj.get("group");
+            relNode.setGroup((List<Long>) relObj.get("group"));
 
-            relNode.aggs = ((List<JSONObject>) relObj.get("aggs"))
+            relNode.setAggs(((List<JSONObject>) relObj.get("aggs"))
                     .stream()
                     .map(this::parseAgg)
-                    .toList();
+                    .toList());
         }
 
         return relNode;
@@ -101,18 +101,18 @@ public class SycldbJsonConverter {
         if (obj.containsKey("input")) {
             exprType = new ExprType(ExprOption.COLUMN);
 
-            exprType.name = (String) obj.get("name");
-            exprType.input = (Long) obj.get("input");
+            exprType.setName((String) obj.get("name"));
+            exprType.setInput((Long) obj.get("input"));
         }
         // expr
         else if (obj.containsKey("op")) {
             exprType = new ExprType(ExprOption.EXPR);
 
-            exprType.op = (String) ((JSONObject) obj.get("op")).get("name");
-            exprType.operands = ((List<JSONObject>) obj.get("operands"))
+            exprType.setOp((String) ((JSONObject) obj.get("op")).get("name"));
+            exprType.setOperands(((List<JSONObject>) obj.get("operands"))
                     .stream()
                     .map(this::parseExpr)
-                    .toList();
+                    .toList());
         }
         // literal
         else {
@@ -121,18 +121,18 @@ public class SycldbJsonConverter {
             Object literal = obj.get("literal");
             if (literal instanceof Long literalValue) {
                 LiteralType literalType = new LiteralType(LiteralOption.LITERAL);
-                literalType.value = literalValue;
-                exprType.literal = literalType;
+                literalType.setValue(literalValue);
+                exprType.setLiteral(literalType);
             } else {
                 List<List<String>> rangeSet = (List<List<String>>) ((JSONObject) literal).get("rangeSet");
                 LiteralType literalType = new LiteralType(LiteralOption.RANGE);
-                literalType.rangeSet = rangeSet;
-                exprType.literal = literalType;
+                literalType.setRangeSet(rangeSet);
+                exprType.setLiteral(literalType);
             }
         }
 
         if (obj.containsKey("type")) {
-            exprType.type = (String) ((JSONObject) obj.get("type")).get("type");
+            exprType.setType((String) ((JSONObject) obj.get("type")).get("type"));
         }
 
         return exprType;

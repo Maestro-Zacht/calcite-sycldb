@@ -117,9 +117,9 @@ public class ServerHandler implements CalciteServer.Iface {
         planner.addRule(SycldbAggregateRule.INSTANCE);
 
         planner.addRule(CoreRules.FILTER_INTO_JOIN);
-//        planner.addRule(CoreRules.AGGREGATE_MERGE);
-//        planner.addRule(CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS);
-//        planner.addRule(CoreRules.AGGREGATE_PROJECT_MERGE);
+        planner.addRule(CoreRules.AGGREGATE_MERGE);
+        planner.addRule(CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS);
+        planner.addRule(CoreRules.AGGREGATE_PROJECT_MERGE);
 //        planner.addRule(CoreRules.AGGREGATE_REMOVE);
 //        planner.addRule(CoreRules.AGGREGATE_FILTER_TRANSPOSE);
 //        planner.addRule(CoreRules.AGGREGATE_JOIN_JOIN_REMOVE);
@@ -127,10 +127,11 @@ public class ServerHandler implements CalciteServer.Iface {
 //        planner.addRule(CoreRules.AGGREGATE_JOIN_TRANSPOSE_EXTENDED);
 //        planner.addRule(CoreRules.FILTER_MERGE);
 //        planner.addRule(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
+        planner.addRule(CoreRules.PROJECT_AGGREGATE_MERGE);
 //        planner.addRule(CoreRules.PROJECT_JOIN_JOIN_REMOVE);
 //        planner.addRule(CoreRules.PROJECT_JOIN_REMOVE);
-//        planner.addRule(CoreRules.PROJECT_MERGE);
-//        planner.addRule(CoreRules.PROJECT_REMOVE);
+        planner.addRule(CoreRules.PROJECT_MERGE);
+        planner.addRule(CoreRules.PROJECT_REMOVE);
 //        planner.addRule(CoreRules.JOIN_CONDITION_PUSH);
 //        planner.addRule(CoreRules.JOIN_COMMUTE);
 //        planner.addRule(CoreRules.JOIN_PUSH_EXPRESSIONS);
