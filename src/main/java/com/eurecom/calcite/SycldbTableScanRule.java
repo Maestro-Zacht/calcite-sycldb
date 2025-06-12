@@ -24,7 +24,8 @@ public final class SycldbTableScanRule extends ConverterRule {
                     scan.getCluster().traitSetOf(SYCLDB),
                     Collections.emptyList(),
                     scan.getTable(),
-                    table
+                    table,
+                    null
             );
         }
         return null;

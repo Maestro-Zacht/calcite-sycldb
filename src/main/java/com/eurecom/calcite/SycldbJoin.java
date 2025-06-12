@@ -41,6 +41,10 @@ public class SycldbJoin extends Join implements SycldbRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq).multiplyBy(0.01);
+        RelOptCost cost = super.computeSelfCost(planner, mq).multiplyBy(0.01);
+        if (isSemiJoin()) {
+            return cost.multiplyBy(0.1);
+        }
+        return cost;
     }
 }

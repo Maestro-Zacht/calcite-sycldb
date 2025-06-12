@@ -31,7 +31,7 @@ public class SycldbSchema extends AbstractSchema {
         lineorderType.add("lo_orderpriority", SqlTypeName.VARCHAR);
         lineorderType.add("lo_shippriority", SqlTypeName.VARCHAR);
         lineorderType.add("lo_quantity", SqlTypeName.INTEGER);
-        
+
 //        lineorderType.add("lo_extendedprice", SqlTypeName.FLOAT);
 //        lineorderType.add("lo_ordtotalprice", SqlTypeName.FLOAT);
 //        lineorderType.add("lo_discount", SqlTypeName.FLOAT);
@@ -45,64 +45,94 @@ public class SycldbSchema extends AbstractSchema {
 
         lineorderType.add("lo_tax", SqlTypeName.INTEGER);
         lineorderType.add("lo_commitdate", SqlTypeName.INTEGER);
-        lineorderType.add("lo_shopmode", SqlTypeName.VARCHAR);
+//        lineorderType.add("lo_shopmode", SqlTypeName.VARCHAR);
+        lineorderType.add("lo_shopmode", SqlTypeName.INTEGER);
 
         SycldbTable lineorderTable = new SycldbTable("lineorder", lineorderType.build());
         tables.put("lineorder", lineorderTable);
 
         RelDataTypeFactory.Builder partType = new RelDataTypeFactory.Builder(typeFactory);
         partType.add("p_partkey", SqlTypeName.INTEGER);
-        partType.add("p_name", SqlTypeName.VARCHAR);
-        partType.add("p_mfgr", SqlTypeName.VARCHAR);
-        partType.add("p_category", SqlTypeName.VARCHAR);
-        partType.add("p_brand1", SqlTypeName.VARCHAR);
-        partType.add("p_color", SqlTypeName.VARCHAR);
-        partType.add("p_type", SqlTypeName.VARCHAR);
+//        partType.add("p_name", SqlTypeName.VARCHAR);
+//        partType.add("p_mfgr", SqlTypeName.VARCHAR);
+//        partType.add("p_category", SqlTypeName.VARCHAR);
+//        partType.add("p_brand1", SqlTypeName.VARCHAR);
+//        partType.add("p_color", SqlTypeName.VARCHAR);
+//        partType.add("p_type", SqlTypeName.VARCHAR);
+        partType.add("p_name", SqlTypeName.INTEGER);
+        partType.add("p_mfgr", SqlTypeName.INTEGER);
+        partType.add("p_category", SqlTypeName.INTEGER);
+        partType.add("p_brand1", SqlTypeName.INTEGER);
+        partType.add("p_color", SqlTypeName.INTEGER);
+        partType.add("p_type", SqlTypeName.INTEGER);
+
         partType.add("p_size", SqlTypeName.INTEGER);
-        partType.add("p_container", SqlTypeName.VARCHAR);
+//        partType.add("p_container", SqlTypeName.VARCHAR);
+        partType.add("p_container", SqlTypeName.INTEGER);
 
         SycldbTable partTable = new SycldbTable("part", partType.build());
         tables.put("part", partTable);
 
         RelDataTypeFactory.Builder supplierType = new RelDataTypeFactory.Builder(typeFactory);
         supplierType.add("s_suppkey", SqlTypeName.INTEGER);
-        supplierType.add("s_name", SqlTypeName.VARCHAR);
-        supplierType.add("s_address", SqlTypeName.VARCHAR);
-        supplierType.add("s_city", SqlTypeName.VARCHAR);
-        supplierType.add("s_nation", SqlTypeName.VARCHAR);
-        supplierType.add("s_region", SqlTypeName.VARCHAR);
-        supplierType.add("s_phone", SqlTypeName.VARCHAR);
+//        supplierType.add("s_name", SqlTypeName.VARCHAR);
+//        supplierType.add("s_address", SqlTypeName.VARCHAR);
+//        supplierType.add("s_city", SqlTypeName.VARCHAR);
+//        supplierType.add("s_nation", SqlTypeName.VARCHAR);
+//        supplierType.add("s_region", SqlTypeName.VARCHAR);
+//        supplierType.add("s_phone", SqlTypeName.VARCHAR);
+        supplierType.add("s_name", SqlTypeName.INTEGER);
+        supplierType.add("s_address", SqlTypeName.INTEGER);
+        supplierType.add("s_city", SqlTypeName.INTEGER);
+        supplierType.add("s_nation", SqlTypeName.INTEGER);
+        supplierType.add("s_region", SqlTypeName.INTEGER);
+        supplierType.add("s_phone", SqlTypeName.INTEGER);
 
         SycldbTable supplierTable = new SycldbTable("supplier", supplierType.build());
         tables.put("supplier", supplierTable);
 
         RelDataTypeFactory.Builder customerType = new RelDataTypeFactory.Builder(typeFactory);
         customerType.add("c_custkey", SqlTypeName.INTEGER);
-        customerType.add("c_name", SqlTypeName.VARCHAR);
-        customerType.add("c_address", SqlTypeName.VARCHAR);
-        customerType.add("c_city", SqlTypeName.VARCHAR);
-        customerType.add("c_nation", SqlTypeName.VARCHAR);
-        customerType.add("c_region", SqlTypeName.VARCHAR);
-        customerType.add("c_phone", SqlTypeName.VARCHAR);
-        customerType.add("c_mktsegment", SqlTypeName.VARCHAR);
+//        customerType.add("c_name", SqlTypeName.VARCHAR);
+//        customerType.add("c_address", SqlTypeName.VARCHAR);
+//        customerType.add("c_city", SqlTypeName.VARCHAR);
+//        customerType.add("c_nation", SqlTypeName.VARCHAR);
+//        customerType.add("c_region", SqlTypeName.VARCHAR);
+//        customerType.add("c_phone", SqlTypeName.VARCHAR);
+//        customerType.add("c_mktsegment", SqlTypeName.VARCHAR);
+        customerType.add("c_name", SqlTypeName.INTEGER);
+        customerType.add("c_address", SqlTypeName.INTEGER);
+        customerType.add("c_city", SqlTypeName.INTEGER);
+        customerType.add("c_nation", SqlTypeName.INTEGER);
+        customerType.add("c_region", SqlTypeName.INTEGER);
+        customerType.add("c_phone", SqlTypeName.INTEGER);
+        customerType.add("c_mktsegment", SqlTypeName.INTEGER);
 
         SycldbTable customerTable = new SycldbTable("customer", customerType.build());
         tables.put("customer", customerTable);
 
         RelDataTypeFactory.Builder ddateType = new RelDataTypeFactory.Builder(typeFactory);
         ddateType.add("d_datekey", SqlTypeName.INTEGER);
-        ddateType.add("d_date", SqlTypeName.VARCHAR);
-        ddateType.add("d_dayofweek", SqlTypeName.VARCHAR);
-        ddateType.add("d_month", SqlTypeName.VARCHAR);
+//        ddateType.add("d_date", SqlTypeName.VARCHAR);
+//        ddateType.add("d_dayofweek", SqlTypeName.VARCHAR);
+//        ddateType.add("d_month", SqlTypeName.VARCHAR);
+        ddateType.add("d_date", SqlTypeName.INTEGER);
+        ddateType.add("d_dayofweek", SqlTypeName.INTEGER);
+        ddateType.add("d_month", SqlTypeName.INTEGER);
+
         ddateType.add("d_year", SqlTypeName.INTEGER);
         ddateType.add("d_yearmonthnum", SqlTypeName.INTEGER);
-        ddateType.add("d_yearmonth", SqlTypeName.VARCHAR);
+//        ddateType.add("d_yearmonth", SqlTypeName.VARCHAR);
+        ddateType.add("d_yearmonth", SqlTypeName.INTEGER);
+
         ddateType.add("d_daynuminweek", SqlTypeName.INTEGER);
         ddateType.add("d_daynuminmonth", SqlTypeName.INTEGER);
         ddateType.add("d_daynuminyear", SqlTypeName.INTEGER);
         ddateType.add("d_monthnuminyear", SqlTypeName.INTEGER);
         ddateType.add("d_weeknuminyear", SqlTypeName.INTEGER);
-        ddateType.add("d_sellingseasin", SqlTypeName.VARCHAR);
+//        ddateType.add("d_sellingseasin", SqlTypeName.VARCHAR);
+        ddateType.add("d_sellingseasin", SqlTypeName.INTEGER);
+        
         ddateType.add("d_lastdayinweekfl", SqlTypeName.INTEGER);
         ddateType.add("d_lastdayinmonthfl", SqlTypeName.INTEGER);
         ddateType.add("d_holidayfl", SqlTypeName.INTEGER);

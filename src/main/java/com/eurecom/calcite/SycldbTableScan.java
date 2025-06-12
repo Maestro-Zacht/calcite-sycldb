@@ -12,10 +12,12 @@ import static java.util.Objects.requireNonNull;
 
 public final class SycldbTableScan extends TableScan implements SycldbRel {
     SycldbTable sycldbTable;
+    final int[] projects;
 
-    SycldbTableScan(RelOptCluster cluster, RelTraitSet traitSet, List<RelHint> hints, RelOptTable table, SycldbTable sycldbTable) {
+    SycldbTableScan(RelOptCluster cluster, RelTraitSet traitSet, List<RelHint> hints, RelOptTable table, SycldbTable sycldbTable, int[] projects) {
         super(cluster, traitSet, hints, table);
         this.sycldbTable = sycldbTable;
+        this.projects = projects;
     }
 
     @Override
@@ -29,6 +31,9 @@ public final class SycldbTableScan extends TableScan implements SycldbRel {
 //        return converter.addTableColumns(sycldbTable.getColumnNames(), sycldbTable.getTableName());
 //    }
 
+    public int[] getProjects() {
+        return projects;
+    }
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {

@@ -8,14 +8,15 @@ import org.apache.calcite.linq4j.QueryProvider;
 import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.schema.ScannableTable;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.schema.ProjectableFilterableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
-public class SycldbTable extends AbstractQueryableTable implements ScannableTable {
+public class SycldbTable extends AbstractQueryableTable implements ProjectableFilterableTable {
     // TODO: real fields
     private final String tableName;
     private final RelDataType dataType;
@@ -59,17 +60,18 @@ public class SycldbTable extends AbstractQueryableTable implements ScannableTabl
 
     @Override
     public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
-        return new ElasticsearchQueryable<>(queryProvider, schema, this, tableName);
+        return new SycldbQueryable<>(queryProvider, schema, this, tableName);
     }
 
     @Override
-    public Enumerable<@Nullable Object[]> scan(DataContext root) {
+    public Enumerable<@Nullable Object[]> scan(DataContext root, List<RexNode> filters, int @Nullable [] projects) {
         return null;
     }
 
-    public static class ElasticsearchQueryable<T> extends AbstractTableQueryable<T> {
 
-        protected ElasticsearchQueryable(QueryProvider queryProvider, SchemaPlus schema, SycldbTable table, String tableName) {
+    public static class SycldbQueryable<T> extends AbstractTableQueryable<T> {
+
+        protected SycldbQueryable(QueryProvider queryProvider, SchemaPlus schema, SycldbTable table, String tableName) {
             super(queryProvider, schema, table, tableName);
         }
 
