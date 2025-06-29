@@ -59,6 +59,9 @@ public class ServerHandler implements CalciteServer.Iface {
 
     @Override
     public PlanResult parse(String sql) {
+        long start = System.nanoTime();
+
+
         // need to trim the sql string as it seems it is not trimed prior to here
         sql = sql.trim();
         // remove last charcter if it is a ;
@@ -81,7 +84,7 @@ public class ServerHandler implements CalciteServer.Iface {
 
         // Configure and instantiate validator
         Properties props = new Properties();
-        props.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), "false");
+        props.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), "false"); // disable case sensitivity
         CalciteConnectionConfig config = new CalciteConnectionConfigImpl(props);
         CalciteCatalogReader catalogReader = new CalciteCatalogReader(schema.getRootSchema(),
                 Collections.singletonList(""),
@@ -97,7 +100,7 @@ public class ServerHandler implements CalciteServer.Iface {
         // Configure and instantiate the converter of the AST to Logical plan (requires opt cluster)
         RelOptCluster cluster = newCluster(schema.getTypeFactory());
         SqlToRelConverter relConverter = new SqlToRelConverter(
-                NOOP_EXPANDER,
+                NOOP_EXPANDER, // used to expand views into actual queries, we don't support views atm
                 validator,
                 catalogReader,
                 cluster,
@@ -146,8 +149,7 @@ public class ServerHandler implements CalciteServer.Iface {
 //        planner.addRule(CoreRules.JOIN_PUSH_EXPRESSIONS);
 //        planner.addRule(CoreRules.JOIN_PUSH_TRANSITIVE_PREDICATES);
 
-        // Define the type of the output plan (in this case we want a physical plan in
-        // BindableConvention)
+        // Define the type of the output plan (SYCLDB convention)
         logPlan = planner.changeTraits(logPlan,
                 cluster.traitSet().replace(SycldbRel.SYCLDB));
         planner.setRoot(logPlan);
@@ -156,12 +158,17 @@ public class ServerHandler implements CalciteServer.Iface {
         RelNode phyPlan = planner.findBestExp();
         String json = RelOptUtil.dumpPlan("", phyPlan, SqlExplainFormat.JSON, SqlExplainLevel.NO_ATTRIBUTES);
 //
-        System.out.println(
-                RelOptUtil.dumpPlan("[Physical plan]", phyPlan, SqlExplainFormat.TEXT,
-                        SqlExplainLevel.NON_COST_ATTRIBUTES));
+//        System.out.println(
+//                RelOptUtil.dumpPlan("[Physical plan]", phyPlan, SqlExplainFormat.TEXT,
+//                        SqlExplainLevel.NON_COST_ATTRIBUTES));
 
 
         SycldbJsonConverter converter = new SycldbJsonConverter(json);
+
+
+        long end = System.nanoTime();
+
+        System.out.println((end - start) / 1000);
 
         return new PlanResult(converter.getRels(), json);
     }

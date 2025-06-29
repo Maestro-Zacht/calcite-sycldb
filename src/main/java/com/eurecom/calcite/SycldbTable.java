@@ -17,7 +17,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.List;
 
 public class SycldbTable extends AbstractQueryableTable implements ProjectableFilterableTable {
-    // TODO: real fields
     private final String tableName;
     private final RelDataType dataType;
 
