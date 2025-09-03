@@ -48,7 +48,7 @@ public class SycldbSchema extends AbstractSchema {
 //        lineorderType.add("lo_shopmode", SqlTypeName.VARCHAR);
         lineorderType.add("lo_shopmode", SqlTypeName.INTEGER);
 
-        SycldbTable lineorderTable = new SycldbTable("lineorder", lineorderType.build());
+        SycldbTable lineorderTable = new SycldbTable("lineorder", lineorderType.build(), 119994746);
         tables.put("lineorder", lineorderTable);
 
         RelDataTypeFactory.Builder partType = new RelDataTypeFactory.Builder(typeFactory);
@@ -70,7 +70,7 @@ public class SycldbSchema extends AbstractSchema {
 //        partType.add("p_container", SqlTypeName.VARCHAR);
         partType.add("p_container", SqlTypeName.INTEGER);
 
-        SycldbTable partTable = new SycldbTable("part", partType.build());
+        SycldbTable partTable = new SycldbTable("part", partType.build(), 1000000);
         tables.put("part", partTable);
 
         RelDataTypeFactory.Builder supplierType = new RelDataTypeFactory.Builder(typeFactory);
@@ -88,7 +88,7 @@ public class SycldbSchema extends AbstractSchema {
         supplierType.add("s_region", SqlTypeName.INTEGER);
         supplierType.add("s_phone", SqlTypeName.INTEGER);
 
-        SycldbTable supplierTable = new SycldbTable("supplier", supplierType.build());
+        SycldbTable supplierTable = new SycldbTable("supplier", supplierType.build(), 40000);
         tables.put("supplier", supplierTable);
 
         RelDataTypeFactory.Builder customerType = new RelDataTypeFactory.Builder(typeFactory);
@@ -108,7 +108,7 @@ public class SycldbSchema extends AbstractSchema {
         customerType.add("c_phone", SqlTypeName.INTEGER);
         customerType.add("c_mktsegment", SqlTypeName.INTEGER);
 
-        SycldbTable customerTable = new SycldbTable("customer", customerType.build());
+        SycldbTable customerTable = new SycldbTable("customer", customerType.build(), 600000);
         tables.put("customer", customerTable);
 
         RelDataTypeFactory.Builder ddateType = new RelDataTypeFactory.Builder(typeFactory);
@@ -132,13 +132,13 @@ public class SycldbSchema extends AbstractSchema {
         ddateType.add("d_weeknuminyear", SqlTypeName.INTEGER);
 //        ddateType.add("d_sellingseasin", SqlTypeName.VARCHAR);
         ddateType.add("d_sellingseasin", SqlTypeName.INTEGER);
-        
+
         ddateType.add("d_lastdayinweekfl", SqlTypeName.INTEGER);
         ddateType.add("d_lastdayinmonthfl", SqlTypeName.INTEGER);
         ddateType.add("d_holidayfl", SqlTypeName.INTEGER);
         ddateType.add("d_weekdayfl", SqlTypeName.INTEGER);
 
-        SycldbTable ddateTable = new SycldbTable("ddate", ddateType.build());
+        SycldbTable ddateTable = new SycldbTable("ddate", ddateType.build(), 2556);
         tables.put("ddate", ddateTable);
 
         rootSchema = CalciteSchema.createRootSchema(false);

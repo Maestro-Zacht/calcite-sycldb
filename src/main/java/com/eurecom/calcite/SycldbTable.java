@@ -11,19 +11,24 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.ProjectableFilterableTable;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.Statistic;
+import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.schema.impl.AbstractTableQueryable;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 public class SycldbTable extends AbstractQueryableTable implements ProjectableFilterableTable {
     private final String tableName;
     private final RelDataType dataType;
+    private final double rowCount;
 
-    SycldbTable(String tableName, RelDataType dataType) {
+    SycldbTable(String tableName, RelDataType dataType, double rowCount) {
         super(Object[].class);
         this.tableName = tableName;
         this.dataType = dataType;
+        this.rowCount = rowCount;
     }
 
     @Override
@@ -43,7 +48,6 @@ public class SycldbTable extends AbstractQueryableTable implements ProjectableFi
 //        );
 //    }
 
-    // TODO: actually get row type
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
         return typeFactory.copyType(dataType);
@@ -65,6 +69,16 @@ public class SycldbTable extends AbstractQueryableTable implements ProjectableFi
     @Override
     public Enumerable<@Nullable Object[]> scan(DataContext root, List<RexNode> filters, int @Nullable [] projects) {
         return null;
+    }
+
+    @Override
+    public Statistic getStatistic() {
+        return Statistics.of(
+                rowCount,
+                Collections.singletonList(
+                        org.apache.calcite.util.ImmutableBitSet.of(0) // first column is always primary key
+                )
+        );
     }
 
 

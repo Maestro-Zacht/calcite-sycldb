@@ -3,38 +3,93 @@ package com.eurecom.calcite.thrift;
 // generated code
 
 import com.eurecom.calcite.*;
-import org.apache.calcite.config.CalciteConnectionConfig;
-import org.apache.calcite.config.CalciteConnectionConfigImpl;
-import org.apache.calcite.config.CalciteConnectionProperty;
 import org.apache.calcite.plan.*;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
-import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlExplainFormat;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql.validate.SqlValidatorUtil;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.sql2rel.StandardConvertletTable;
+import org.apache.calcite.tools.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.server.TServer;
 
 import java.util.Collections;
-import java.util.Properties;
 
 public class ServerHandler implements CalciteServer.Iface {
-    private TServer server;
+    private FrameworkConfig config;
+    private Program program;
 
     public ServerHandler(TServer server) {
         super();
-        this.server = server;
+        SchemaPlus rootSchema = Frameworks.createRootSchema(true);
+        SchemaPlus sycldbSchema = rootSchema.add("SYCLDBSCHEMA", new SycldbSchema());
+
+        SqlParser.Config parserConfig = SqlParser.config()
+                .withCaseSensitive(false); // parser: not case sensitive
+
+        SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
+                .withIdentifierExpansion(true); // expand * to full columns
+
+        this.program = Programs.ofRules(
+                // SYCLDB rules
+                SycldbFilterRule.INSTANCE,
+                SycldbProjectRule.INSTANCE,
+                SycldbToEnumerableConverterRule.INSTANCE,
+                SycldbTableScanRule.INSTANCE,
+                SycldbJoinRule.INSTANCE,
+                SycldbAggregateRule.INSTANCE,
+
+                // optimization rules
+
+                //        TODO: doesn't work
+//                ProjectTableScanRule.INSTANCE,
+
+                CoreRules.FILTER_INTO_JOIN,
+                CoreRules.AGGREGATE_MERGE,
+                CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS,
+                CoreRules.AGGREGATE_PROJECT_MERGE,
+                CoreRules.FILTER_MERGE,
+                CoreRules.FILTER_AGGREGATE_TRANSPOSE,
+                CoreRules.FILTER_SCAN,
+                CoreRules.PROJECT_AGGREGATE_MERGE,
+                CoreRules.PROJECT_MERGE,
+                CoreRules.PROJECT_REMOVE,
+                CoreRules.PROJECT_TO_SEMI_JOIN,
+                CoreRules.PROJECT_JOIN_TRANSPOSE,
+                CoreRules.JOIN_CONDITION_PUSH,
+                CoreRules.JOIN_ADD_REDUNDANT_SEMI_JOIN,
+                CoreRules.JOIN_ON_UNIQUE_TO_SEMI_JOIN,
+                CoreRules.JOIN_TO_SEMI_JOIN
+        );
+
+
+//        planner.addRule(CoreRules.AGGREGATE_REMOVE);
+//        planner.addRule(CoreRules.AGGREGATE_FILTER_TRANSPOSE);
+//        planner.addRule(CoreRules.AGGREGATE_JOIN_JOIN_REMOVE);
+//        planner.addRule(CoreRules.AGGREGATE_JOIN_REMOVE);
+//        planner.addRule(CoreRules.AGGREGATE_JOIN_TRANSPOSE);
+
+//        planner.addRule(CoreRules.PROJECT_JOIN_JOIN_REMOVE);
+//        planner.addRule(CoreRules.PROJECT_JOIN_REMOVE);
+
+//        planner.addRule(CoreRules.JOIN_COMMUTE);
+//        planner.addRule(CoreRules.JOIN_PUSH_EXPRESSIONS);
+//        planner.addRule(CoreRules.JOIN_PUSH_TRANSITIVE_PREDICATES);
+
+        this.config = Frameworks.newConfigBuilder()
+                .defaultSchema(sycldbSchema)
+                .parserConfig(parserConfig)
+                .sqlValidatorConfig(validatorConfig)
+                .programs(program)
+                .build();
     }
 
     @Override
@@ -69,98 +124,47 @@ public class ServerHandler implements CalciteServer.Iface {
             sql = sql.substring(0, sql.length() - 1);
         }
 
-        SycldbSchema schema = new SycldbSchema();
+        Planner planner = Frameworks.getPlanner(config);
 
-        // Create an SQL parser
-        SqlParser parser = SqlParser.create(sql);
-        // Parse the query into an AST
-
-        SqlNode sqlNode = null;
+        SqlNode parsed = null;
         try {
-            sqlNode = parser.parseQuery();
+            parsed = planner.parse(sql);
         } catch (SqlParseException e) {
-            return null;
+            throw new RuntimeException(e);
+        }
+        SqlNode validated = null;
+        try {
+            validated = planner.validate(parsed);
+        } catch (ValidationException e) {
+            throw new RuntimeException(e);
         }
 
-        // Configure and instantiate validator
-        Properties props = new Properties();
-        props.setProperty(CalciteConnectionProperty.CASE_SENSITIVE.camelName(), "false"); // disable case sensitivity
-        CalciteConnectionConfig config = new CalciteConnectionConfigImpl(props);
-        CalciteCatalogReader catalogReader = new CalciteCatalogReader(schema.getRootSchema(),
-                Collections.singletonList(""),
-                schema.getTypeFactory(), config);
+        RelRoot root = null;
+        try {
+            root = planner.rel(validated);
+        } catch (RelConversionException e) {
+            throw new RuntimeException(e);
+        }
 
-        SqlValidator validator = SqlValidatorUtil.newValidator(SqlStdOperatorTable.instance(),
-                catalogReader, schema.getTypeFactory(),
-                SqlValidator.Config.DEFAULT);
+        System.out.println(
+                RelOptUtil.dumpPlan("[Logical plan]", root.rel, SqlExplainFormat.TEXT,
+                        SqlExplainLevel.EXPPLAN_ATTRIBUTES));
 
-        // Validate the initial AST
-        SqlNode validNode = validator.validate(sqlNode);
 
-        // Configure and instantiate the converter of the AST to Logical plan (requires opt cluster)
-        RelOptCluster cluster = newCluster(schema.getTypeFactory());
-        SqlToRelConverter relConverter = new SqlToRelConverter(
-                NOOP_EXPANDER, // used to expand views into actual queries, we don't support views atm
-                validator,
-                catalogReader,
-                cluster,
-                StandardConvertletTable.INSTANCE,
-                SqlToRelConverter.config());
-
-        // Convert the valid AST into a logical plan
-        RelNode logPlan = relConverter.convertQuery(validNode, false, true).rel;
-
-        RelOptPlanner planner = cluster.getPlanner();
-        // Initialize optimizer/planner with the necessary rules
-        planner.addRule(SycldbFilterRule.INSTANCE);
-        planner.addRule(SycldbProjectRule.INSTANCE);
-        planner.addRule(SycldbToEnumerableConverterRule.INSTANCE);
-        planner.addRule(SycldbTableScanRule.INSTANCE);
-        planner.addRule(SycldbJoinRule.INSTANCE);
-        planner.addRule(SycldbAggregateRule.INSTANCE);
-
-//        TODO: doesn't work
-//        planner.addRule(ProjectTableScanRule.INSTANCE);
-
-        planner.addRule(CoreRules.FILTER_INTO_JOIN);
-        planner.addRule(CoreRules.AGGREGATE_MERGE);
-        planner.addRule(CoreRules.AGGREGATE_PROJECT_PULL_UP_CONSTANTS);
-        planner.addRule(CoreRules.AGGREGATE_PROJECT_MERGE);
-//        planner.addRule(CoreRules.AGGREGATE_REMOVE);
-//        planner.addRule(CoreRules.AGGREGATE_FILTER_TRANSPOSE);
-//        planner.addRule(CoreRules.AGGREGATE_JOIN_JOIN_REMOVE);
-//        planner.addRule(CoreRules.AGGREGATE_JOIN_REMOVE);
-//        planner.addRule(CoreRules.AGGREGATE_JOIN_TRANSPOSE);
-        planner.addRule(CoreRules.FILTER_MERGE);
-        planner.addRule(CoreRules.FILTER_AGGREGATE_TRANSPOSE);
-        planner.addRule(CoreRules.FILTER_SCAN);
-        planner.addRule(CoreRules.PROJECT_AGGREGATE_MERGE);
-//        planner.addRule(CoreRules.PROJECT_JOIN_JOIN_REMOVE);
-//        planner.addRule(CoreRules.PROJECT_JOIN_REMOVE);
-        planner.addRule(CoreRules.PROJECT_MERGE);
-        planner.addRule(CoreRules.PROJECT_REMOVE);
-        planner.addRule(CoreRules.PROJECT_TO_SEMI_JOIN);
-        planner.addRule(CoreRules.PROJECT_JOIN_TRANSPOSE);
-        planner.addRule(CoreRules.JOIN_CONDITION_PUSH);
-        planner.addRule(CoreRules.JOIN_ADD_REDUNDANT_SEMI_JOIN);
-        planner.addRule(CoreRules.JOIN_ON_UNIQUE_TO_SEMI_JOIN);
-        planner.addRule(CoreRules.JOIN_TO_SEMI_JOIN);
-//        planner.addRule(CoreRules.JOIN_COMMUTE);
-//        planner.addRule(CoreRules.JOIN_PUSH_EXPRESSIONS);
-//        planner.addRule(CoreRules.JOIN_PUSH_TRANSITIVE_PREDICATES);
-
-        // Define the type of the output plan (SYCLDB convention)
-        logPlan = planner.changeTraits(logPlan,
-                cluster.traitSet().replace(SycldbRel.SYCLDB));
-        planner.setRoot(logPlan);
+        RelTraitSet traitSet = root.rel.getTraitSet()
+                .replace(SycldbRel.SYCLDB);
         // Start the optimization process to obtain the most efficient physical plan based on the
         // provided rule set.
-        RelNode phyPlan = planner.findBestExp();
-        String json = RelOptUtil.dumpPlan("", phyPlan, SqlExplainFormat.JSON, SqlExplainLevel.NO_ATTRIBUTES);
-//
-//        System.out.println(
-//                RelOptUtil.dumpPlan("[Physical plan]", phyPlan, SqlExplainFormat.TEXT,
-//                        SqlExplainLevel.NON_COST_ATTRIBUTES));
+        RelOptPlanner relOptPlanner = root.rel.getCluster().getPlanner();
+        RelNode physical = program.run(relOptPlanner, root.rel, traitSet,
+                Collections.emptyList(), Collections.emptyList());
+
+
+        String json = RelOptUtil.dumpPlan("", physical, SqlExplainFormat.JSON, SqlExplainLevel.NO_ATTRIBUTES);
+
+        System.out.println(
+                RelOptUtil.dumpPlan("[Physical plan]", physical, SqlExplainFormat.TEXT,
+                        SqlExplainLevel.ALL_ATTRIBUTES));
 
 
         SycldbJsonConverter converter = new SycldbJsonConverter(json);
@@ -168,7 +172,7 @@ public class ServerHandler implements CalciteServer.Iface {
 
         long end = System.nanoTime();
 
-        System.out.println((end - start) / 1000);
+//        System.out.println((end - start) / 1000);
 
         return new PlanResult(converter.getRels(), json);
     }
