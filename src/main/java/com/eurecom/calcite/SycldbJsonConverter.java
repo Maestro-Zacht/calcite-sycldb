@@ -38,6 +38,7 @@ public class SycldbJsonConverter {
             case "com.eurecom.calcite.SycldbProject" -> RelNodeType.PROJECT;
             case "com.eurecom.calcite.SycldbAggregate" -> RelNodeType.AGGREGATE;
             case "com.eurecom.calcite.SycldbJoin" -> RelNodeType.JOIN;
+            case "com.eurecom.calcite.SycldbSort" -> RelNodeType.SORT;
             default -> throw new RuntimeException("Unknown RelNodeType: " + relOp);
         };
 
@@ -81,7 +82,30 @@ public class SycldbJsonConverter {
                     .toList());
         }
 
+        if (relOpType == RelNodeType.SORT) {
+            relNode.setCollation(((List<JSONObject>) relObj.get("collation"))
+                    .stream()
+                    .map(this::parseCollation)
+                    .toList());
+        }
+
         return relNode;
+    }
+
+    private CollationType parseCollation(JSONObject obj) {
+        return new CollationType(
+                (Long) obj.get("field"),
+                switch ((String) obj.get("direction")) {
+                    case "ASCENDING" -> DirectionOption.ASCENDING;
+                    case "DESCENDING" -> DirectionOption.DESCENDING;
+                    default -> throw new RuntimeException("Unknown CollationType: " + obj.get("direction"));
+                },
+                switch ((String) obj.get("nulls")) {
+                    case "FIRST" -> NullsOption.FIRST;
+                    case "LAST" -> NullsOption.LAST;
+                    default -> throw new RuntimeException("Unknown CollationType: " + obj.get("nulls"));
+                }
+        );
     }
 
     private AggType parseAgg(JSONObject obj) {

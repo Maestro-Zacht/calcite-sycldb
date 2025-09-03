@@ -141,7 +141,7 @@ public class SycldbSchema extends AbstractSchema {
         SycldbTable ddateTable = new SycldbTable("ddate", ddateType.build(), 2556);
         tables.put("ddate", ddateTable);
 
-        rootSchema = CalciteSchema.createRootSchema(false);
+        rootSchema = CalciteSchema.createRootSchema(true);
 
         tables.forEach((s, table) -> {
             rootSchema.add(s, table);

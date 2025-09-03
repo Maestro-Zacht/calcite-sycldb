@@ -24,8 +24,8 @@ import org.apache.thrift.server.TServer;
 import java.util.Collections;
 
 public class ServerHandler implements CalciteServer.Iface {
-    private FrameworkConfig config;
-    private Program program;
+    private final FrameworkConfig config;
+    private final Program program;
 
     public ServerHandler(TServer server) {
         super();
@@ -46,6 +46,7 @@ public class ServerHandler implements CalciteServer.Iface {
                 SycldbTableScanRule.INSTANCE,
                 SycldbJoinRule.INSTANCE,
                 SycldbAggregateRule.INSTANCE,
+                SycldbSortRule.INSTANCE,
 
                 // optimization rules
 
@@ -166,13 +167,13 @@ public class ServerHandler implements CalciteServer.Iface {
                 RelOptUtil.dumpPlan("[Physical plan]", physical, SqlExplainFormat.TEXT,
                         SqlExplainLevel.ALL_ATTRIBUTES));
 
-
+        System.out.println(json);
         SycldbJsonConverter converter = new SycldbJsonConverter(json);
 
 
         long end = System.nanoTime();
 
-//        System.out.println((end - start) / 1000);
+        System.out.println((end - start) / 1000);
 
         return new PlanResult(converter.getRels(), json);
     }

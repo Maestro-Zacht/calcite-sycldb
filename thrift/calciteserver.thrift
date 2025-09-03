@@ -6,6 +6,23 @@ enum RelNodeType {
     JOIN,
     PROJECT,
     AGGREGATE,
+    SORT,
+}
+
+enum DirectionOption {
+    DESCENDING,
+    ASCENDING,
+}
+
+enum NullsOption {
+    FIRST,
+    LAST,
+}
+
+struct CollationType {
+    1: i64 field,
+    2: DirectionOption direction,
+    3: NullsOption nulls,
 }
 
 struct AggType {
@@ -46,14 +63,15 @@ struct ExprType {
 struct RelNode {
     1: i64 id,
     2: RelNodeType relOp,
-    3: optional list<string> tables,    // table scan
-    4: optional list<i64> inputs,       // table scan, join
-    5: optional ExprType condition,     // filter, join
-    6: optional string joinType,        // join
-    7: optional list<string> fields,    // project
-    8: optional list<ExprType> exprs,   // project
-    9: optional list<i64> group,        // aggregate
-    10: optional list<AggType> aggs,    // aggregate
+    3: optional list<string> tables,            // table scan
+    4: optional list<i64> inputs,               // table scan, join
+    5: optional ExprType condition,             // filter, join
+    6: optional string joinType,                // join
+    7: optional list<string> fields,            // project
+    8: optional list<ExprType> exprs,           // project
+    9: optional list<i64> group,                // aggregate
+    10: optional list<AggType> aggs,            // aggregate
+    11: optional list<CollationType> collation, // sort
 }
 
 struct PlanResult {
