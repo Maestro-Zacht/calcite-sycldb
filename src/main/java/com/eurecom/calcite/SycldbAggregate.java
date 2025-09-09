@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 public class SycldbAggregate extends Aggregate implements SycldbRel {
 
     private static final Set<SqlKind> SUPPORTED_AGGREGATIONS =
-            EnumSet.of(SqlKind.COUNT, SqlKind.SUM, SqlKind.SUM0);
+            EnumSet.of(SqlKind.COUNT, SqlKind.SUM, SqlKind.SUM0, SqlKind.AVG);
 
     public SycldbAggregate(RelOptCluster cluster,
                            RelTraitSet traitSet,
