@@ -131,19 +131,27 @@ public class ServerHandler implements CalciteServer.Iface {
         try {
             parsed = planner.parse(sql);
         } catch (SqlParseException e) {
+            System.err.println("Sql ParseException: " + e.getMessage());
             throw new RuntimeException(e);
         }
+
+        System.out.println("Parsed");
+
         SqlNode validated = null;
         try {
             validated = planner.validate(parsed);
         } catch (ValidationException e) {
+            System.err.println("ValidationException: " + e.getMessage());
             throw new RuntimeException(e);
         }
+
+        System.out.println("Validated");
 
         RelRoot root = null;
         try {
             root = planner.rel(validated);
         } catch (RelConversionException e) {
+            System.err.println("RelConversionException: " + e.getMessage());
             throw new RuntimeException(e);
         }
 
