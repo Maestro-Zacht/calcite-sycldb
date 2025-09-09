@@ -17,6 +17,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.tools.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.server.TServer;
@@ -26,17 +27,23 @@ import java.util.Collections;
 public class ServerHandler implements CalciteServer.Iface {
     private final FrameworkConfig config;
     private final Program program;
+    private final SycldbSchema schema;
 
     public ServerHandler(TServer server) {
         super();
         SchemaPlus rootSchema = Frameworks.createRootSchema(true);
-        SchemaPlus sycldbSchema = rootSchema.add("SYCLDBSCHEMA", new SycldbSchema());
+        schema = new SycldbSchema(SycldbSchema.SchemaOptions.SSB);
+        SchemaPlus sycldbSchema = rootSchema.add("SYCLDBSCHEMA", schema);
 
         SqlParser.Config parserConfig = SqlParser.config()
                 .withCaseSensitive(false); // parser: not case sensitive
 
         SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT
                 .withIdentifierExpansion(true); // expand * to full columns
+
+        SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()
+                .withDecorrelationEnabled(true)
+                .withTrimUnusedFields(true);
 
         this.program = Programs.ofRules(
                 // SYCLDB rules
@@ -68,7 +75,10 @@ public class ServerHandler implements CalciteServer.Iface {
                 CoreRules.JOIN_CONDITION_PUSH,
                 CoreRules.JOIN_ADD_REDUNDANT_SEMI_JOIN,
                 CoreRules.JOIN_ON_UNIQUE_TO_SEMI_JOIN,
-                CoreRules.JOIN_TO_SEMI_JOIN
+                CoreRules.JOIN_TO_SEMI_JOIN,
+                CoreRules.FILTER_SUB_QUERY_TO_CORRELATE,
+                CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE,
+                CoreRules.JOIN_SUB_QUERY_TO_CORRELATE
         );
 
 
@@ -89,6 +99,7 @@ public class ServerHandler implements CalciteServer.Iface {
                 .defaultSchema(sycldbSchema)
                 .parserConfig(parserConfig)
                 .sqlValidatorConfig(validatorConfig)
+                .sqlToRelConverterConfig(converterConfig)
                 .programs(program)
                 .build();
     }
@@ -157,7 +168,7 @@ public class ServerHandler implements CalciteServer.Iface {
 
         System.out.println(
                 RelOptUtil.dumpPlan("[Logical plan]", root.rel, SqlExplainFormat.TEXT,
-                        SqlExplainLevel.EXPPLAN_ATTRIBUTES));
+                        SqlExplainLevel.NON_COST_ATTRIBUTES));
 
 
         RelTraitSet traitSet = root.rel.getTraitSet()
@@ -173,7 +184,7 @@ public class ServerHandler implements CalciteServer.Iface {
 
         System.out.println(
                 RelOptUtil.dumpPlan("[Physical plan]", physical, SqlExplainFormat.TEXT,
-                        SqlExplainLevel.ALL_ATTRIBUTES));
+                        SqlExplainLevel.NON_COST_ATTRIBUTES));
 
         System.out.println(json);
         SycldbJsonConverter converter = new SycldbJsonConverter(json);
